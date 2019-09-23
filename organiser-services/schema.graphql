@@ -1,0 +1,19 @@
+schema {
+    query:Query
+    mutation: Mutation
+}
+
+type Query {
+    getTodos: [Todo]
+}
+
+type Mutation {
+    createToDo(id: ID!, name: String, description: String, priority: Int): Todo
+}
+
+type Todo {
+    id: ID!
+    name: String
+    description: String
+    priority: Int
+}

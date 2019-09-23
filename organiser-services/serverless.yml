@@ -1,0 +1,64 @@
+service: organiser-services
+
+plugins:
+  - serverless-appsync-plugin
+
+custom:
+  appSync:
+    name: ${self:service}-appsync
+    authenticationType: AMAZON_COGNITO_USER_POOLS
+    userPoolConfig:
+      defaultAction: ALLOW
+      userPoolId:
+        Ref: CognitoUserPool
+    mappingTemplates:
+      - dataSource: createToDo
+        type: Mutation
+        field: createToDo
+        request: createToDo/request.vtl
+        response: createToDo/response.vtl
+    dataSources:
+      - type: AWS_LAMBDA
+        name: createToDo
+        description: "Lambda DataSource"
+        config:
+          functionName: createToDo
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  region: eu-west-2
+  environment:
+    DYNAMODB_TABLE: ${self:service}-table
+
+functions:
+  createToDo:
+    handler: handlers/createToDo.handler
+
+resources:
+  Resources:
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:service}_user_pool
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+
+    OrganiserDB:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: dueDate
+            AttributeType: S
+
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: dueDate
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
